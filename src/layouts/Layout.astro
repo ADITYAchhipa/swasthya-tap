@@ -1,0 +1,47 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const { 
+	title = "SwasthyaTap — India's ₹20 NFC Emergency Health Card | आपकी स्वास्थ्य पहचान",
+	description = "A ₹20 NFC card that saves lives in the golden hour. Any bystander taps it with their phone — instantly sees your blood group, allergies, medications. Alerts family with GPS. Works offline. No app needed."
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Sans+Oriya:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Inter:wght@100..900&display=swap"
+			rel="stylesheet"
+		/>
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<meta name="keywords" content="NFC health card, emergency health ID, SwasthyaTap, blood group card, medical ID India, golden hour" />
+		
+		<!-- Open Graph -->
+		<meta property="og:title" content="SwasthyaTap — One Card That Can Save Your Life" />
+		<meta property="og:description" content={description} />
+		<meta property="og:image" content="/og-image.png" />
+		<meta property="og:type" content="website" />
+		<meta property="og:locale" content="en_IN" />
+		
+		<!-- Twitter -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="SwasthyaTap — Emergency Health Card for Every Indian" />
+		<meta name="twitter:description" content="₹20 NFC card. Tap to see blood group, allergies. Alert family instantly." />
+	</head>
+	<body class="antialiased bg-background text-foreground">
+		<slot />
+	</body>
+</html>

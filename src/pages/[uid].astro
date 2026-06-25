@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ProfilePageReact from '@/components/pages/ProfilePage';
+
+export function getStaticPaths() {
+	return [
+		{ params: { uid: 'ST-A3B7K2' } },
+		{ params: { uid: 'demo' } },
+	];
+}
+
+const { uid } = Astro.params;
+---
+
+<Layout title="Emergency Medical Profile | SwasthyaTap" description="SwasthyaTap Emergency Medical Profile. Scan to see blood group, allergies, and contact family.">
+	<ProfilePageReact uid={uid} client:load />
+</Layout>
