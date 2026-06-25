@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, memo } from 'react';
 import { useLanguage } from '@/i18n/LanguageProvider';
 
 function drawHeartECG(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
@@ -82,7 +82,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
-function FrontCanvas({ brandName, tagline }: { brandName: string; tagline: string }) {
+const FrontCanvas = memo(function FrontCanvas({ brandName, tagline }: { brandName: string; tagline: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -160,9 +160,9 @@ function FrontCanvas({ brandName, tagline }: { brandName: string; tagline: strin
   }, [brandName, tagline]);
 
   return <canvas ref={canvasRef} width={1348} height={840} style={{ width: '100%', height: '100%', display: 'block', borderRadius: '12px' }} />;
-}
+});
 
-function BackCanvas({ brandName, tagline, fields, btnLine1, btnLine2, features, helpTitle, helpEmail }: {
+const BackCanvas = memo(function BackCanvas({ brandName, tagline, fields, btnLine1, btnLine2, features, helpTitle, helpEmail }: {
   brandName: string; tagline: string;
   fields: { label: string; value: string; valueColor: string }[];
   btnLine1: string; btnLine2: string;
@@ -299,61 +299,77 @@ function BackCanvas({ brandName, tagline, fields, btnLine1, btnLine2, features, 
   }, [brandName, tagline, fields, btnLine1, btnLine2, features, helpTitle, helpEmail]);
 
   return <canvas ref={canvasRef} width={1348} height={840} style={{ width: '100%', height: '100%', display: 'block', borderRadius: '12px' }} />;
-}
+});
 
 export default function Card3D() {
   const { t } = useLanguage();
-  const [rotY, setRotY] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const [auto, setAuto] = useState(true);
+  // Use refs for rotation — avoids React re-render on every animation frame
+  const rotYRef = useRef(0);
+  const innerRef = useRef<HTMLDivElement>(null);
   const [showFront, setShowFront] = useState(true);
-  const dragStart = useRef<{ x: number; rotY: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const autoRef = useRef(true);
+  const dragStartRef = useRef<{ x: number; rotY: number } | null>(null);
   const rafRef = useRef<number>(0);
-  const lastTime = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
+  const isDraggingRef = useRef(false);
 
-  // Track when front side is visible
-  useEffect(() => {
+  const applyRotation = (rotY: number) => {
+    if (innerRef.current) {
+      innerRef.current.style.transform = `rotateY(${rotY}deg)`;
+    }
     const normalized = ((rotY % 360) + 360) % 360;
-    setShowFront(normalized < 90 || normalized > 270);
-  }, [rotY]);
+    const front = normalized < 90 || normalized > 270;
+    setShowFront(prev => prev !== front ? front : prev);
+  };
 
   const showBack = !showFront;
 
   useEffect(() => {
-    if (!auto) return;
     const animate = (time: number) => {
-      const delta = lastTime.current ? (time - lastTime.current) / 1000 : 0;
-      lastTime.current = time;
-      setRotY(r => r + delta * 40);
+      if (autoRef.current) {
+        const delta = lastTimeRef.current ? (time - lastTimeRef.current) / 1000 : 0;
+        lastTimeRef.current = time;
+        rotYRef.current += delta * 40;
+        applyRotation(rotYRef.current);
+      }
       rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [auto]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onMouseDown = (e: React.MouseEvent) => {
-    setAuto(false);
+    autoRef.current = false;
+    isDraggingRef.current = true;
     setDragging(true);
-    dragStart.current = { x: e.clientX, rotY };
+    dragStartRef.current = { x: e.clientX, rotY: rotYRef.current };
   };
   const onMouseMove = (e: React.MouseEvent) => {
-    if (!dragging || !dragStart.current) return;
-    const dx = e.clientX - dragStart.current.x;
-    setRotY(dragStart.current.rotY + dx * 0.5);
+    if (!isDraggingRef.current || !dragStartRef.current) return;
+    const newRot = dragStartRef.current.rotY + (e.clientX - dragStartRef.current.x) * 0.5;
+    rotYRef.current = newRot;
+    applyRotation(newRot);
   };
   const onMouseUp = () => {
+    isDraggingRef.current = false;
     setDragging(false);
-    setAuto(true); lastTime.current = 0;
+    autoRef.current = true;
+    lastTimeRef.current = 0;
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
-    setAuto(false);
+    autoRef.current = false;
+    isDraggingRef.current = true;
     setDragging(true);
-    dragStart.current = { x: e.touches[0].clientX, rotY };
+    dragStartRef.current = { x: e.touches[0].clientX, rotY: rotYRef.current };
   };
   const onTouchMove = (e: React.TouchEvent) => {
-    if (!dragging || !dragStart.current) return;
-    setRotY(dragStart.current.rotY + (e.touches[0].clientX - dragStart.current.x) * 0.5);
+    if (!isDraggingRef.current || !dragStartRef.current) return;
+    const newRot = dragStartRef.current.rotY + (e.touches[0].clientX - dragStartRef.current.x) * 0.5;
+    rotYRef.current = newRot;
+    applyRotation(newRot);
   };
 
   const lineItems = [
@@ -455,14 +471,14 @@ export default function Card3D() {
           onTouchMove={onTouchMove}
           onTouchEnd={onMouseUp}
         >
-          <div style={{
+          <div ref={innerRef} style={{
             width: '100%', height: '100%',
             transformStyle: 'preserve-3d',
-            transform: `rotateY(${rotY}deg)`,
-            transition: dragging ? 'none' : undefined,
+            transform: `rotateY(0deg)`,
             borderRadius: 16,
             boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
             position: 'relative',
+            willChange: 'transform',
           }}>
             {/* Front */}
             <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', borderRadius: 16, overflow: 'hidden' }}>

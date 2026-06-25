@@ -300,7 +300,7 @@ export default function HowItWorks() {
 
               {/* Tapping Card Overlay (Flares/Taps OVER the phone screen and frame) */}
               <AnimatePresence mode="wait">
-                {activeStep === 0 && !isMobile && (
+                {activeStep === 0 && !isMobile && isInView && (
                   <motion.div
                     key="tapping-card"
                     initial={{ y: -170, x: 70, rotate: 25, opacity: 0, scale: 1.05 }}
